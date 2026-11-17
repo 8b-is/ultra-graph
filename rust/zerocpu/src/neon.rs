@@ -10,9 +10,11 @@ use core::arch::aarch64::*;
 
 /// The ARMv8.2 DotProd kernel: four int8 multiply-accumulates per instruction.
 ///
-/// `vdotq_s32` is the whole inner loop -- 16 bytes in, one `sdot`, no widening
-/// and no pairwise adds. It needs the `dotprod` target feature, so it is only
-/// called after a runtime check, and only on aarch64.
+/// One `sdot` per 16 bytes -- no widening, no pairwise adds. Emitted as inline
+/// asm because the `vdotq_s32` intrinsic is still an unstable library feature
+/// (`stdarch_neon_dotprod`); the instruction itself is stable under the
+/// `dotprod` target feature, so this builds on stable Rust. Needs that feature,
+/// so it is only called after a runtime check, and only on aarch64.
 #[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "dotprod")]
 unsafe fn dot_i8_dotprod(a: &[i8], b: &[i8]) -> i64 {
@@ -22,7 +24,13 @@ unsafe fn dot_i8_dotprod(a: &[i8], b: &[i8]) -> i64 {
     while i + 16 <= n {
         let va = vld1q_s8(a.as_ptr().add(i));
         let vb = vld1q_s8(b.as_ptr().add(i));
-        acc = vdotq_s32(acc, va, vb);
+        core::arch::asm!(
+            "sdot {acc:v}.4s, {a:v}.16b, {b:v}.16b",
+            acc = inout(vreg) acc,
+            a = in(vreg) va,
+            b = in(vreg) vb,
+            options(pure, nomem, nostack),
+        );
         i += 16;
     }
     let mut tail = 0i64;
