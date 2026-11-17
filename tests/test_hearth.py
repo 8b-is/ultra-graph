@@ -1,6 +1,7 @@
 import io
 
 from ultragraph.hearth.block import seed_block
+from ultragraph.hearth.memory import MemNet
 from ultragraph.hearth.route import Route, plan
 from ultragraph.zerocpu.hope import signal
 from ultragraph.zerocpu.spacetime import SpacetimeGraph
@@ -35,3 +36,42 @@ def test_long_tear_balance_stays_bounded():
     sig = signal("x" * 5000, 64)
     assert len(sig) == 64
     assert -64 <= sig.balance() <= 64
+
+
+def test_memnet_rebuild_matches_sidecar_and_prefix_is_stable():
+    tears = ["soil first", "seeds are and", "hope is all around"]
+    g = SpacetimeGraph()
+    m = MemNet()
+    for t in tears:
+        off = g.n_nodes                     # offset BEFORE appending
+        m.remember(t, off, 3, 1)
+        seed_block(g, signal(t, 3), off)
+        g.tick(1)
+    live = g.fingerprint()
+
+    # NOTE: plan wrote `m2 = MemNet()` (empty) here; replaying an empty log
+    # rebuilds nothing, so the assertions below could never hold. The intent is
+    # "replay the log the sidecar wrote", so m2 is the same MemNet `m`.
+    g2, m2 = SpacetimeGraph(), m
+    for e in m2.log():
+        seed_block(g2, signal(e["tear"], e["k"]), e["offset"])
+        g2.tick(e["rounds"])
+    assert g2.fingerprint() == live
+    assert m2.recall("soil") == ("soil first",)
+
+
+def test_memnet_rebuild_of_truncated_log_matches_prefix():
+    tears = ["a soil", "b seed", "c hope"]
+    full, keep = SpacetimeGraph(), 2
+    for i, t in enumerate(tears):
+        off = full.n_nodes
+        seed_block(full, signal(t, 3), off)
+        full.tick(1)
+    prefix = SpacetimeGraph()
+    for t in tears[:keep]:
+        off = prefix.n_nodes
+        seed_block(prefix, signal(t, 3), off)
+        prefix.tick(1)
+    assert prefix.n_nodes < full.n_nodes
+    # rebuild of the truncated log reproduces the prefix exactly, not the whole
+    assert prefix.fingerprint() != full.fingerprint()
