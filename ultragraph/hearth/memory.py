@@ -12,9 +12,9 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
+from ..zerocpu.hope import signal
 from ..zerocpu.spacetime import SpacetimeGraph
 from .block import seed_block
-from ..zerocpu.hope import signal
 
 __all__ = ["MemNet"]
 
