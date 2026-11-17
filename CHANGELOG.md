@@ -4,6 +4,16 @@ All notable changes to this project. Format follows
 [Keep a Changelog](https://keepachangelog.com/); this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.33.1] — 2026-11-17
+
+### Fixed
+- `rust/zerocpu` builds on **stable** again. The 0.33.0 DotProd kernel called
+  `vdotq_s32`, an unstable library feature (`stdarch_neon_dotprod`,
+  rust-lang/rust#117224): it compiled on nightly but E0658'd on stable, and CI
+  (Python only) never saw it. The kernel now emits the same `sdot` instruction
+  as inline asm under `#[target_feature(enable = "dotprod")]` — identical
+  parity, identical speed, no nightly gate. Rust crate 0.9.1.
+
 ## [0.33.0] — 2026-11-17
 
 ### Changed
