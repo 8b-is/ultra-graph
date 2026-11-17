@@ -9,7 +9,7 @@ amount every tear.
 
 from __future__ import annotations
 
-from ..zerocpu.fixed import fx_dot
+from ..zerocpu.fixed import FRAC_BITS, ONE, fx_dot
 from ..zerocpu.hope import Signal
 
 __all__ = ["BLOCK", "caveman"]
@@ -19,6 +19,12 @@ BLOCK: int = 8
 
 
 def caveman(sig: Signal) -> int:
-    """Packed-lane dot of a signal's trits against themselves.  Integer only."""
-    packed = [int(t) for t in sig.trits]
-    return fx_dot(packed, packed)
+    """Count the signal's non-zero trits, using the Q16.16 dot.
+
+    ``fx_dot`` is a fixed-point product: it returns ``round(total / 2**16)``.
+    Feeding raw trits in ``{-1, 0, +1}`` therefore always rounds to ``0``.  Lanes
+    are scaled to Q16.16 first, so the dot returns ``count * 2**16`` and the
+    final shift yields the count itself -- integer only, no new arithmetic.
+    """
+    packed = [int(t) * ONE for t in sig.trits]
+    return fx_dot(packed, packed) >> FRAC_BITS
