@@ -4,6 +4,26 @@ All notable changes to this project. Format follows
 [Keep a Changelog](https://keepachangelog.com/); this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.26.0] — 2026-11-16
+
+### Fixed
+- `zerocpu.fixed.decay_q16_trunc(current, factor)` (+ Rust twin, parity goldens) —
+  decay truncating toward zero. Round-half-away-from-zero pinned small amplitudes
+  at `±1` forever (`decay_q16(1, ONE // 2) == 1`), so ring transients never died
+  and the empty-world verdict `0` was unreachable. `Ring.tick` now uses it: with
+  `factor < ONE`, amplitudes reach exactly 0.
+- `hearth.ledger.FokenLedger.record_compute` rejects negative counts and
+  `kept > original` with `ValueError` — the ledger cannot lie.
+
+### Added
+- `Breath.feed` rolls each tear's heat (`caveman(sig) * ONE`) into the ring as a
+  transient at a rolling cursor that skips anchor slots. The decay loop now has
+  live signal: noise fades to zero, anchors hold `+1`.
+
+### Changed
+- `Ring.verdict` iterates the set bits of `active_mask` instead of scanning all
+  `N_IDLE` slots — same result, fewer cycles.
+
 ## [0.25.0] — 2026-11-16
 
 ### Added
