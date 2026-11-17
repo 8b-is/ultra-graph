@@ -1,8 +1,8 @@
 import io
 
 from ultragraph.hearth.block import seed_block
-from ultragraph.hearth.kernel import BLOCK
-from ultragraph.hearth.loop import hearth
+from ultragraph.hearth.kernel import BLOCK, caveman
+from ultragraph.hearth.loop import Breath, hearth
 from ultragraph.hearth.memory import MemNet
 from ultragraph.hearth.route import Route, plan
 from ultragraph.zerocpu.hope import signal
@@ -130,3 +130,40 @@ def test_repl_feeds_lines_and_exits_on_eof():
     out = buf.getvalue()
     assert "tears/write >" in out
     assert "soil first" not in out or "collapse" in out
+
+
+def test_breath_remembers_tears_and_recalls_them():
+    b = Breath()
+    b.feed("soil first")
+    b.feed("hope is all around")
+    b.feed("")                       # empty tear must not be remembered
+    assert b.recall("soil") == ("soil first",)
+    assert b.recall("hope") == ("hope is all around",)
+    assert len(b.memnet.log()) == 2
+    assert [e["k"] for e in b.memnet.log()] == [BLOCK, BLOCK]
+
+
+def test_breath_rebuild_from_memnet_log_matches_live_world():
+    tears = ["soil first", "seeds are and", "hope is all around"]
+    live = Breath()
+    for t in tears:
+        live.feed(t)
+
+    replayed = SpacetimeGraph()
+    for e in live.memnet.log():
+        seed_block(replayed, signal(e["tear"], e["k"]), e["offset"])
+        replayed.tick(e["rounds"])
+    assert replayed.fingerprint() == live.graph.fingerprint()
+
+
+def test_caveman_counts_nonzero_trits():
+    # fx_dot is Q16.16; raw trits would round to zero. heat must equal the
+    # number of lanes that survived the dead-zone.
+    for tear in ["abc", "soil first", "hope is all around", "x" * 500]:
+        sig = signal(tear, BLOCK)
+        expected = sum(1 for t in sig.trits if t != 0)
+        assert caveman(sig) == expected
+
+
+def test_caveman_is_not_always_zero():
+    assert caveman(signal("abc", BLOCK)) > 0

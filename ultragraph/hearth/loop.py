@@ -15,6 +15,7 @@ from ..zerocpu.hope import observer, signal
 from ..zerocpu.spacetime import SpacetimeGraph
 from .block import seed_block
 from .kernel import BLOCK, caveman
+from .memory import MemNet
 from .route import Route, plan
 
 __all__ = ["Breath", "BreathResult", "hearth"]
@@ -35,10 +36,15 @@ class BreathResult:
 class Breath:
     """One world, advanced by feeding tears one at a time."""
 
-    __slots__ = ("graph",)
+    __slots__ = ("graph", "memnet")
 
     def __init__(self, graph: SpacetimeGraph | None = None) -> None:
         self.graph = graph if graph is not None else SpacetimeGraph()
+        self.memnet = MemNet()
+
+    def recall(self, cue: str) -> tuple[str, ...]:
+        """Tears this breath has already eaten whose text contains ``cue``."""
+        return self.memnet.recall(cue)
 
     def feed(self, tear: str) -> BreathResult:
         """Append a block for ``tear`` (unless empty), tick, and collapse."""
@@ -59,6 +65,7 @@ class Breath:
         k = BLOCK
         sig = signal(tear, k)
         first, appended = seed_block(self.graph, sig, n)
+        self.memnet.remember(tear, first, appended, 1)
         self.graph.tick(1)
         return BreathResult(
             route=route,

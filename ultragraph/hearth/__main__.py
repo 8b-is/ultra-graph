@@ -26,10 +26,16 @@ def main() -> None:
         tear = line.rstrip("\n")
         if tear == "exit":
             break
+        if tear.startswith("recall "):
+            cue = tear[len("recall "):]
+            hits = breath.recall(cue)
+            print(f"recall {cue!r} -> {len(hits)} hit(s): {', '.join(hits)}")
+            continue
         r = breath.feed(tear)
         print(
             f"{r.route.value} / heat={r.heat} / "
-            f"{r.offset}+{r.appended} / collapse={r.collapse} / {r.fingerprint}"
+            f"{r.offset}+{r.appended} / collapse={r.collapse} / "
+            f"mem={len(breath.memnet.log())} / {r.fingerprint}"
         )
 
 
