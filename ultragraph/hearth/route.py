@@ -34,7 +34,13 @@ def plan(tear: str, n: int, budget: int = BUDGET) -> Route:
     ``sig = signal(tear, n)``; ``Deep`` if the lane count exceeds ``budget``
     (world outgrew the cache line), else ``Caveman`` when the trit balance is
     zero (perfectly centered, think directly), else ``Reflect``.
+
+    An empty world (``n < 1``) has no lanes and zero balance: that is the
+    ``Caveman`` case, so routing stays total without calling ``signal`` with
+    ``n == 0`` (which ``hope.signal`` rejects).
     """
+    if n < 1:
+        return Route.CAVEMAN
     sig: Signal = signal(tear, n)
     if len(sig) > budget:
         return Route.DEEP

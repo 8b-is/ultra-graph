@@ -1,6 +1,8 @@
 import io
 
 from ultragraph.hearth.block import seed_block
+from ultragraph.hearth.kernel import BLOCK
+from ultragraph.hearth.loop import hearth
 from ultragraph.hearth.memory import MemNet
 from ultragraph.hearth.route import Route, plan
 from ultragraph.zerocpu.hope import signal
@@ -75,3 +77,33 @@ def test_memnet_rebuild_of_truncated_log_matches_prefix():
     assert prefix.n_nodes < full.n_nodes
     # rebuild of the truncated log reproduces the prefix exactly, not the whole
     assert prefix.fingerprint() != full.fingerprint()
+
+
+def test_breath_appends_then_ticks_then_collapses():
+    g = SpacetimeGraph()
+    b = hearth(["soil first", "hope is all around"], g)
+    assert len(b) == 2
+    assert b[0].appended == BLOCK and b[0].offset == 0
+    assert b[1].offset == b[0].appended          # append-only, contiguous
+    assert b[1].appended == BLOCK                # fixed block, not len(sig)
+    assert b[0].collapse in (-1, 0, 1)
+    assert b[1].fingerprint != b[0].fingerprint
+
+
+def test_hearth_is_deterministic():
+    a = hearth(["a", "b", "c"], SpacetimeGraph())
+    b = hearth(["a", "b", "c"], SpacetimeGraph())
+    assert [x.fingerprint for x in a] == [x.fingerprint for x in b]
+
+
+def test_empty_tear_appends_nothing():
+    g = SpacetimeGraph()
+    out = hearth(["soil", "", "seed"], g)
+    assert out[1].appended == 0
+    assert out[1].offset == out[0].appended
+    assert out[1].fingerprint == out[0].fingerprint
+
+
+def test_unicode_tear_keeps_block_size():
+    out = hearth(["hogy vagy Emese? 🕯️"], SpacetimeGraph())
+    assert out[0].appended == BLOCK
