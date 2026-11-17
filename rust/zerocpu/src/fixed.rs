@@ -89,6 +89,17 @@ pub fn decay_q16(current: i64, factor: i64) -> i64 {
     round_shift(current * factor)
 }
 
+/// Like [`decay_q16`] but truncating toward zero, so repeated decay with
+/// `factor < ONE` reaches exactly 0 instead of pinning at +/-1.
+pub fn decay_q16_trunc(current: i64, factor: i64) -> i64 {
+    let product = current * factor;
+    if product >= 0 {
+        product >> FRAC_BITS
+    } else {
+        -((-product) >> FRAC_BITS)
+    }
+}
+
 /// Compute `e^(-x)` for `x` in Q16.16 using a [3/3] Padé approximant.
 ///
 /// Returns `ONE` for `x <= 0` and `0` for `x >= 40 << FRAC_BITS`.

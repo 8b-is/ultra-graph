@@ -38,6 +38,7 @@ __all__ = [
     "fx_sqrt",
     "fx_dist",
     "decay_q16",
+    "decay_q16_trunc",
     "pade_exp_neg_q16",
     "saturate",
 ]
@@ -158,6 +159,19 @@ def fx_dist(a, b) -> int:
 def decay_q16(current: int, factor: int) -> int:
     """Multiply a raw Q16.16 value by a Q16.16 decay factor, keeping Q16.16."""
     return _round_shift(int(current) * int(factor))
+
+
+def decay_q16_trunc(current: int, factor: int) -> int:
+    """Like :func:`decay_q16` but truncating toward zero.
+
+    Round-half-away-from-zero pins small amplitudes at ``+/-1`` forever
+    (``decay_q16(1, ONE // 2) == 1``), so a ring of transients never empties.
+    Truncation makes repeated decay with ``factor < ONE`` reach exactly 0.
+    """
+    product = int(current) * int(factor)
+    if product >= 0:
+        return product >> FRAC_BITS
+    return -((-product) >> FRAC_BITS)
 
 
 def pade_exp_neg_q16(x: int) -> int:

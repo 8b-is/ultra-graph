@@ -5,8 +5,8 @@
 //! one of these tests fails instead of the two runtimes drifting apart.
 
 use zerocpu::{
-    decay_q16, dot_i8, dot_i8_scalar, dot_ternary, from_int, from_ratio, fx_div, fx_dot, fx_mul,
-    fx_sqrt, pack5, pade_exp_neg_q16, round_div, saturate_i8, to_int, unpack5, ONE,
+    decay_q16, decay_q16_trunc, dot_i8, dot_i8_scalar, dot_ternary, from_int, from_ratio, fx_div,
+    fx_dot, fx_mul, fx_sqrt, pack5, pade_exp_neg_q16, round_div, saturate_i8, to_int, unpack5, ONE,
 };
 
 #[test]
@@ -73,6 +73,21 @@ fn fixed_decay_and_pade_exp_match_python_goldens() {
     assert_eq!(pade_exp_neg_q16(40 << 16), 0);
     assert_eq!(pade_exp_neg_q16((41 << 16) | 1), 0);
     assert_eq!(pade_exp_neg_q16(1 << 16), 24109);
+}
+
+#[test]
+fn decay_trunc_matches_python_goldens() {
+    assert_eq!(decay_q16_trunc(1, ONE / 2), 0);
+    assert_eq!(decay_q16_trunc(-1, ONE / 2), 0);
+    assert_eq!(decay_q16_trunc(3, ONE / 2), 1);
+    assert_eq!(decay_q16_trunc(-3, ONE / 2), -1);
+    assert_eq!(decay_q16_trunc(12345, ONE), 12345);
+    assert_eq!(decay_q16_trunc(-12345, ONE), -12345);
+    let mut v = ONE;
+    for _ in 0..17 {
+        v = decay_q16_trunc(v, ONE / 2);
+    }
+    assert_eq!(v, 0);
 }
 
 #[test]
