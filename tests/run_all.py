@@ -21,6 +21,8 @@ MODULES = [
     "test_e2e",
     "test_zerocpu",
     "test_fixed_decay",
+    "test_hearth_ring",
+    "test_hearth_ledger",
     "test_hearth",
 ]
 
