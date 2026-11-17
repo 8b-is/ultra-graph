@@ -1,3 +1,5 @@
+from ultragraph.hearth.ledger import FokenLedger
+from ultragraph.hearth.loop import Breath
 from ultragraph.hearth.ring import N_IDLE, Ring
 from ultragraph.zerocpu.fixed import ONE
 
@@ -26,3 +28,13 @@ def test_anchor_at_last_index_does_not_overflow():
     r.write(2, ONE)
     r.tick()
     assert r.verdict() == 1
+
+
+def test_anchor_command_writes_and_verdict_holds():
+    b = Breath()
+    idx = b.anchor("Homalyos fény szűrődik be, / Az ablakon Emeséhez")
+    assert idx == 0
+    for _ in range(200):
+        b.feed("transient noise")
+    assert b.verdict() == 1
+    assert b.ring.amplitudes[0] == 3 * ONE

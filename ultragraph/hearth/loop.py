@@ -11,11 +11,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
+from ..zerocpu.fixed import ONE
 from ..zerocpu.hope import observer, signal
 from ..zerocpu.spacetime import SpacetimeGraph
 from .block import seed_block
 from .kernel import BLOCK, caveman
+from .ledger import FokenLedger
 from .memory import MemNet
+from .ring import N_IDLE, Ring
 from .route import Route, plan
 
 __all__ = ["Breath", "BreathResult", "hearth"]
@@ -36,11 +39,25 @@ class BreathResult:
 class Breath:
     """One world, advanced by feeding tears one at a time."""
 
-    __slots__ = ("graph", "memnet")
+    __slots__ = ("graph", "ledger", "memnet", "ring")
 
     def __init__(self, graph: SpacetimeGraph | None = None) -> None:
         self.graph = graph if graph is not None else SpacetimeGraph()
         self.memnet = MemNet()
+        self.ring = Ring()
+        self.ledger = FokenLedger()
+
+    def anchor(self, tear: str) -> int:
+        """Write ``tear`` as an immortal anchor at the next free ring slot."""
+        for index in range(N_IDLE):
+            if (self.ring.anchor_mask & (1 << index)) == 0:
+                self.ring.set_anchor(index, 3 * ONE)
+                return index
+        raise ValueError("ring anchor table is full")
+
+    def verdict(self) -> int:
+        """Return the current ring verdict in {-1, 0, 1}."""
+        return self.ring.verdict()
 
     def recall(self, cue: str) -> tuple[str, ...]:
         """Tears this breath has already eaten whose text contains ``cue``."""
@@ -66,6 +83,8 @@ class Breath:
         sig = signal(tear, k)
         first, appended = seed_block(self.graph, sig, n)
         self.memnet.remember(tear, first, appended, 1)
+        self.ledger.record_compute(BLOCK, BLOCK)
+        self.ring.tick()
         self.graph.tick(1)
         return BreathResult(
             route=route,

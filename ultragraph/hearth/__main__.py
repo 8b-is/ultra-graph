@@ -26,6 +26,14 @@ def main() -> None:
         tear = line.rstrip("\n")
         if tear == "exit":
             break
+        if tear == "verdict":
+            print(f"verdict={breath.verdict()}")
+            continue
+        if tear.startswith("anchor "):
+            text = tear[len("anchor "):]
+            idx = breath.anchor(text)
+            print(f"anchor={idx}")
+            continue
         if tear.startswith("recall "):
             cue = tear[len("recall "):]
             hits = breath.recall(cue)

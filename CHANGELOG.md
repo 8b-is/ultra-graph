@@ -4,6 +4,21 @@ All notable changes to this project. Format follows
 [Keep a Changelog](https://keepachangelog.com/); this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.25.0] — 2026-11-16
+
+### Added
+- `zerocpu.fixed.decay_q16(current, factor)` / `pade_exp_neg_q16(x)` (+ Rust twins
+  in `rust/zerocpu/src/fixed.rs`) — exact integer Q16.16 decay and `[3/3]` Padé
+  $e^{-x}$ with `x = k·ln2 + r` range reduction.
+- `hearth.ring.Ring` (`N_IDLE = 64`) — fixed-size Q16.16 amplitude ring with
+  bitmask-tracked anchors (`set_anchor`), transient writes (`write`), `tick()`
+  dyadic decay over `active_mask & ~anchor_mask`, and `verdict()`.
+- `hearth.ledger.FokenLedger` / `Fraction` — exact reduced-rational accounting
+  of `(original, kept)` token compute (`record_compute`, `get_savings`,
+  `get_kept_ratio`, `is_empty`) without zero-denominator panics on empty ledgers.
+- `Breath.anchor(tear)` / `Breath.verdict()` + REPL `anchor <text>` and `verdict`
+  commands — pin tears at `3 * ONE` amplitude in the idle ring.
+
 ## [0.24.0] — 2026-11-16
 
 ### Added
