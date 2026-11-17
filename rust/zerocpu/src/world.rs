@@ -127,9 +127,7 @@ impl World {
 
     /// Index of the first `src -> dst` edge, if any.
     pub fn find_edge(&self, src: u32, dst: u32) -> Option<usize> {
-        self.edges
-            .iter()
-            .position(|e| e.src == src && e.dst == dst)
+        self.edges.iter().position(|e| e.src == src && e.dst == dst)
     }
 
     pub fn set_edge_weight(&mut self, at: usize, weight: i8) -> Result<()> {

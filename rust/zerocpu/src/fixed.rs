@@ -84,6 +84,32 @@ pub fn to_int(value: i64) -> i64 {
     round_div(value, ONE)
 }
 
+/// Multiply a raw Q16.16 value by a Q16.16 decay factor, keeping Q16.16.
+pub fn decay_q16(current: i64, factor: i64) -> i64 {
+    round_shift(current * factor)
+}
+
+/// Compute `e^(-x)` for `x` in Q16.16 using a [3/3] Padé approximant.
+///
+/// Returns `ONE` for `x <= 0` and `0` for `x >= 40 << FRAC_BITS`.
+pub fn pade_exp_neg_q16(x: i64) -> i64 {
+    if x <= 0 {
+        return ONE;
+    }
+    if x >= 40 << FRAC_BITS {
+        return 0;
+    }
+    const INV_LN2: i64 = 94548;
+    const LN2_Q16: i64 = 45426;
+    let k = (x * INV_LN2) >> 32;
+    let r = x - k * LN2_Q16;
+    let r2 = (r * r) >> FRAC_BITS;
+    let r3 = (r * r2) >> FRAC_BITS;
+    let num = (120 * ONE) - (60 * r) + (12 * r2) - r3;
+    let den = (120 * ONE) + (60 * r) + (12 * r2) + r3;
+    round_div(num << FRAC_BITS, den) >> k.min(32)
+}
+
 /// Clamp into the int8 node-byte range.
 pub fn saturate_i8(value: i64) -> i8 {
     value.clamp(i8::MIN as i64, i8::MAX as i64) as i8

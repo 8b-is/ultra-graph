@@ -5,8 +5,8 @@
 //! one of these tests fails instead of the two runtimes drifting apart.
 
 use zerocpu::{
-    dot_i8, dot_i8_scalar, dot_ternary, from_int, from_ratio, fx_div, fx_dot, fx_mul, fx_sqrt,
-    pack5, round_div, saturate_i8, to_int, unpack5, ONE,
+    decay_q16, dot_i8, dot_i8_scalar, dot_ternary, from_int, from_ratio, fx_div, fx_dot, fx_mul,
+    fx_sqrt, pack5, pade_exp_neg_q16, round_div, saturate_i8, to_int, unpack5, ONE,
 };
 
 #[test]
@@ -49,13 +49,30 @@ fn fixed_dot_matches_python_golden() {
 fn fixed_rounding_is_symmetric_about_zero() {
     let m = fx_mul(from_ratio(3, 2), from_int(2));
     assert_eq!(m, fx_mul(from_ratio(-3, 2), from_int(-2)));
-    assert_eq!(fx_div(from_int(-1), from_int(3)), -fx_div(from_int(1), from_int(3)));
+    assert_eq!(
+        fx_div(from_int(-1), from_int(3)),
+        -fx_div(from_int(1), from_int(3))
+    );
 }
 
 #[test]
 #[should_panic(expected = "division by zero")]
 fn fixed_div_by_zero_panics() {
     let _ = round_div(1, 0);
+}
+
+#[test]
+fn fixed_decay_and_pade_exp_match_python_goldens() {
+    assert_eq!(decay_q16(ONE, ONE), ONE);
+    assert_eq!(decay_q16(12345, ONE), 12345);
+    assert_eq!(decay_q16(ONE, ONE / 2), ONE / 2);
+    assert_eq!(decay_q16(3 * ONE, ONE / 2), fx_mul(3 * ONE, ONE / 2));
+
+    assert_eq!(pade_exp_neg_q16(0), ONE);
+    assert_eq!(pade_exp_neg_q16(-(5 << 16)), ONE);
+    assert_eq!(pade_exp_neg_q16(40 << 16), 0);
+    assert_eq!(pade_exp_neg_q16((41 << 16) | 1), 0);
+    assert_eq!(pade_exp_neg_q16(1 << 16), 24109);
 }
 
 #[test]

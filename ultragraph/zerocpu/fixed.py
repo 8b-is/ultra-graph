@@ -37,6 +37,8 @@ __all__ = [
     "fx_matvec",
     "fx_sqrt",
     "fx_dist",
+    "decay_q16",
+    "pade_exp_neg_q16",
     "saturate",
 ]
 
@@ -151,6 +153,33 @@ def fx_dist(a, b) -> int:
         d = int(x) - int(y)
         sq += d * d
     return math.isqrt(sq)
+
+
+def decay_q16(current: int, factor: int) -> int:
+    """Multiply a raw Q16.16 value by a Q16.16 decay factor, keeping Q16.16."""
+    return _round_shift(int(current) * int(factor))
+
+
+def pade_exp_neg_q16(x: int) -> int:
+    """Compute ``e**(-x)`` for ``x`` in Q16.16 using a [3/3] Pade approximant.
+
+    Splits ``x = k * ln(2) + r`` so ``e**(-x) = 2**(-k) * e**(-r)``.
+    Returns ``ONE`` for ``x <= 0`` and ``0`` for ``x > 40 << 16``.
+    """
+    x = int(x)
+    if x <= 0:
+        return ONE
+    if x >= 40 << FRAC_BITS:
+        return 0
+    inv_ln2 = 94548
+    ln2_q16 = 45426
+    k = (x * inv_ln2) >> 32
+    r = x - k * ln2_q16
+    r2 = (r * r) >> FRAC_BITS
+    r3 = (r * r2) >> FRAC_BITS
+    num = (120 * ONE) - (60 * r) + (12 * r2) - r3
+    den = (120 * ONE) + (60 * r) + (12 * r2) + r3
+    return _round_div(num << FRAC_BITS, den) >> min(k, 32)
 
 
 def saturate(value: int, lo: int, hi: int) -> int:
