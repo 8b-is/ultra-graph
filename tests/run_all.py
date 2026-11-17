@@ -20,6 +20,7 @@ MODULES = [
     "test_advanced",
     "test_e2e",
     "test_zerocpu",
+    "test_hearth",
 ]
 
 
