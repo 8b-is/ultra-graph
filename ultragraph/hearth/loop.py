@@ -39,13 +39,14 @@ class BreathResult:
 class Breath:
     """One world, advanced by feeding tears one at a time."""
 
-    __slots__ = ("graph", "ledger", "memnet", "ring")
+    __slots__ = ("graph", "ledger", "memnet", "ring", "_cursor")
 
     def __init__(self, graph: SpacetimeGraph | None = None) -> None:
         self.graph = graph if graph is not None else SpacetimeGraph()
         self.memnet = MemNet()
         self.ring = Ring()
         self.ledger = FokenLedger()
+        self._cursor = 0
 
     def anchor(self, tear: str) -> int:
         """Write ``tear`` as an immortal anchor at the next free ring slot."""
@@ -84,16 +85,27 @@ class Breath:
         first, appended = seed_block(self.graph, sig, n)
         self.memnet.remember(tear, first, appended, 1)
         self.ledger.record_compute(BLOCK, BLOCK)
+        heat = caveman(sig)
         self.ring.tick()
+        self._write_transient(heat)
         self.graph.tick(1)
         return BreathResult(
             route=route,
-            heat=caveman(sig),
+            heat=heat,
             offset=first,
             appended=appended,
             collapse=observer(self.graph),
             fingerprint=self.graph.fingerprint(),
         )
+
+    def _write_transient(self, heat: int) -> None:
+        """Roll one transient amplitude into the ring, skipping anchor slots."""
+        for _ in range(N_IDLE):
+            index = self._cursor
+            self._cursor = (self._cursor + 1) % N_IDLE
+            if (self.ring.anchor_mask & (1 << index)) == 0:
+                self.ring.write(index, heat * ONE)
+                return
 
 
 def hearth(

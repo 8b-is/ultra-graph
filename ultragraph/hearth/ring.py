@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..zerocpu.fixed import ONE, decay_q16
+from ..zerocpu.fixed import ONE, decay_q16_trunc
 
 __all__ = ["N_IDLE", "Ring"]
 
@@ -55,7 +55,7 @@ class Ring:
             bit = to_decay & -to_decay
             to_decay ^= bit
             index = bit.bit_length() - 1
-            amp = decay_q16(self.amplitudes[index], self.decay_factor)
+            amp = decay_q16_trunc(self.amplitudes[index], self.decay_factor)
             self.amplitudes[index] = amp
             if amp == 0:
                 self.active_mask &= ~bit
@@ -64,7 +64,12 @@ class Ring:
         """Return +1 if any anchor is active, else the sign of active amplitudes."""
         if (self.active_mask & self.anchor_mask) != 0:
             return 1
-        total = sum(self.amplitudes[i] for i in range(N_IDLE) if (self.active_mask & (1 << i)) != 0)
+        total = 0
+        bits = self.active_mask
+        while bits:
+            bit = bits & -bits
+            bits ^= bit
+            total += self.amplitudes[bit.bit_length() - 1]
         return 0 if total == 0 else (1 if total > 0 else -1)
 
     def active(self) -> int:
