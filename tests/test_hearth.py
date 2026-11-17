@@ -107,3 +107,26 @@ def test_empty_tear_appends_nothing():
 def test_unicode_tear_keeps_block_size():
     out = hearth(["hogy vagy Emese? 🕯️"], SpacetimeGraph())
     assert out[0].appended == BLOCK
+
+
+def test_repl_feeds_lines_and_exits_on_eof():
+    # NOTE: plan wrote this with pytest `monkeypatch`/`capsys` fixtures, but
+    # tests/run_all.py calls every test with no arguments, so a fixture-based
+    # signature would error under the project runner. Same assertions, done
+    # with stdlib so `python3 tests/run_all.py` can run it.
+    import sys
+    from contextlib import redirect_stdout
+
+    import ultragraph.hearth.__main__ as repl
+
+    old_stdin = sys.stdin
+    buf = io.StringIO()
+    try:
+        sys.stdin = io.StringIO("soil first\nexit\n")
+        with redirect_stdout(buf):
+            repl.main()
+    finally:
+        sys.stdin = old_stdin
+    out = buf.getvalue()
+    assert "tears/write >" in out
+    assert "soil first" not in out or "collapse" in out

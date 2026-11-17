@@ -4,6 +4,39 @@ All notable changes to this project. Format follows
 [Keep a Changelog](https://keepachangelog.com/); this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.24.0] — 2026-11-16
+
+### Added
+- `ultragraph.hearth` — an append-only "hearth" breath loop over
+  `ultragraph.zerocpu`. Each line of text ("tear") appends a fixed `BLOCK = 8`
+  nodes, seeds only that block, ticks the world once, and collapses an
+  `Observer` value. Nothing is ever removed, overwritten, or reordered; a
+  `SpacetimeGraph` stays the only graph.
+  - `hearth.block.seed_block(graph, sig, offset)` — append-only slice seeding,
+    the one new primitive (`hope.seed_signal` can only write the whole world
+    from index 0). Raises if `offset != graph.n_nodes`.
+  - `hearth.route.plan(tear, n, budget)` — a pure integer router over
+    `(tear, n, budget)`: `Deep` when the lane count exceeds `BUDGET` (64),
+    `Caveman` when the trit balance is zero, else `Reflect`. No keyword tables,
+    no globals, no live-world reads.
+  - `hearth.memory.MemNet` — a derived index over the ordered tear log
+    (append-only, no eviction) with substring `recall` and `rebuild` by replay.
+    The replay is the source of truth; the index cannot drift from the world.
+  - `hearth.kernel.BLOCK` / `caveman(sig)` — fixed block size (not `len(sig)`,
+    which would double the world every tear) and the packed-lane integer dot via
+    `fixed.fx_dot`.
+  - `hearth.loop.Breath` / `hearth(tears, graph)` / `BreathResult` — the breath:
+    fetch → route → append → observe, with a per-breath fingerprint.
+  - `python3 -m ultragraph.hearth` — stdin REPL at the `tears/write >` prompt,
+    printing `route / heat / offset+appended / collapse / fingerprint`.
+
+### Notes
+- Integer-only in every deterministic path; no `f32`/`f64`, no float literals.
+- `ultragraph/zerocpu/` is untouched by this pass.
+- Not in this pass: the spec's Pass 2 harvest into `zerocpu` (anchors, `N_IDLE`,
+  dyadic-shift decay, `pade_exp_neg_q16`, case-insensitive guard) — separate
+  plan, separate review.
+
 ## [0.23.0] — 2026-11-16
 
 ### Added
