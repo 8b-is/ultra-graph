@@ -56,8 +56,11 @@ class FokenLedger:
         return self._original == 0
 
     def record_compute(self, original: int, kept: int) -> None:
-        self._original += int(original)
-        self._kept += int(kept)
+        original, kept = int(original), int(kept)
+        if original < 0 or kept < 0 or kept > original:
+            raise ValueError(f"invalid compute counts: original={original}, kept={kept}")
+        self._original += original
+        self._kept += kept
 
     def get_savings(self) -> Fraction:
         saved = self._original - self._kept
